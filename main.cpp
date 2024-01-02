@@ -14,6 +14,9 @@ map<int, vector<char>> Rules;
 set<char> terminals;
 int ruleNumber = 1;
 
+map<char, vector<char>> First;
+map<char, vector<char>> Follow;
+
 void read_grammar(string filePath);
 void printGrammer();
 bool isLetter(char ch);
@@ -41,7 +44,7 @@ void read_grammar(string filePath)
         line += "|";
         char noneTerminal = line[0];
 
-        if (islower(noneTerminal))
+        if (isTerminal(noneTerminal))
         {
             generateError(1);
         }
