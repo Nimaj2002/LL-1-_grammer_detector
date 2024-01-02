@@ -20,15 +20,13 @@ bool isLetter(char ch);
 bool isTerminal(char ch);
 void generateError(int errorType);
 
-
 int main(int argc, char *argv[])
 {
     string filePath;
     filePath = argv[1];
+
     read_grammar(filePath);
     printGrammer();
-
-    // vector<int , map<char, vector<string>>> listOfRules;
 }
 
 void read_grammar(string filePath)
@@ -48,7 +46,7 @@ void read_grammar(string filePath)
             generateError(1);
         }
 
-        string items;
+        vector<char> items;
         for (int i = 3; i < line.size(); i++)
         {
             if (('|' == line[i]))
@@ -57,13 +55,7 @@ void read_grammar(string filePath)
                 if (find == listOfRules.end()) // no same NoneTerminal in map
                 {
                     listOfRules[noneTerminal] = {ruleNumber};
-
-                    vector<char> v;
-                    for (char ch : items)
-                    {
-                        v.push_back(ch);
-                    }
-                    Rules[ruleNumber] = v;
+                    Rules[ruleNumber] = items;
 
                     ruleNumber++;
                     items.clear();
@@ -71,13 +63,7 @@ void read_grammar(string filePath)
                 else // there is a rule starting with same NoneTerminal
                 {
                     find->second.push_back(ruleNumber);
-
-                    vector<char> v;
-                    for (char ch : items)
-                    {
-                        v.push_back(ch);
-                    }
-                    Rules[ruleNumber] = v;
+                    Rules[ruleNumber] = items;
 
                     ruleNumber++;
                     items.clear();
@@ -89,7 +75,7 @@ void read_grammar(string filePath)
                 {
                     terminals.insert(line[i]);
                 }
-                items += line[i];
+                items.push_back(line[i]);
             }
         }
     }
