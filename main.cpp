@@ -9,19 +9,22 @@
 
 using namespace std;
 
-map<char, vector<int>> listOfRules;
+map<char, vector<int>> NoneTerminals;
 map<int, vector<char>> Rules;
 set<char> terminals;
 int ruleNumber = 1;
 
-map<char, vector<char>> First;
-map<char, vector<char>> Follow;
+map<char, set<char>> First;
+map<char, set<char>> Follow;
 
 void read_grammar(string filePath);
 void printGrammer();
 bool isLetter(char ch);
 bool isTerminal(char ch);
 void generateError(int errorType);
+set<char> calculateFirst(char NoneTerminal);
+void printFirst();
+set<char> firstof(char item, vector<char> Rule, int i);
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +33,11 @@ int main(int argc, char *argv[])
 
     read_grammar(filePath);
     printGrammer();
+    for (pair Terminal : NoneTerminals)
+    {
+        calculateFirst(Terminal.first);
+    }
+    printFirst();
 }
 
 void read_grammar(string filePath)
@@ -40,6 +48,10 @@ void read_grammar(string filePath)
     {
         string line;
         getline(myfile, line);
+        if (('/' == line[0]) || (' ' == line[0]) || (line.empty())) // handeling comments
+        {
+            continue;
+        }
         line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
         line += "|";
         char noneTerminal = line[0];
@@ -50,16 +62,18 @@ void read_grammar(string filePath)
         }
 
         vector<char> items;
+        set<char> emptySet;
         for (int i = 3; i < line.size(); i++)
         {
             if (('|' == line[i]))
             {
-                auto find = listOfRules.find(noneTerminal);
-                if (find == listOfRules.end()) // no same NoneTerminal in map
+                auto find = NoneTerminals.find(noneTerminal);
+                if (find == NoneTerminals.end()) // no same NoneTerminal in map
                 {
-                    listOfRules[noneTerminal] = {ruleNumber};
+                    NoneTerminals[noneTerminal] = {ruleNumber};
                     Rules[ruleNumber] = items;
-
+                    First[noneTerminal] = emptySet;
+                    Follow[noneTerminal] = emptySet;
                     ruleNumber++;
                     items.clear();
                 }
@@ -67,7 +81,6 @@ void read_grammar(string filePath)
                 {
                     find->second.push_back(ruleNumber);
                     Rules[ruleNumber] = items;
-
                     ruleNumber++;
                     items.clear();
                 }
@@ -86,7 +99,7 @@ void read_grammar(string filePath)
 
 void printGrammer()
 {
-    for (auto it : listOfRules)
+    for (auto it : NoneTerminals)
     {
         cout << "Key: " << it.first << endl;
         for (auto j : it.second)
@@ -96,13 +109,14 @@ void printGrammer()
             {
                 myString += c;
             }
-            cout << "Values: " << myString << endl;
+            cout << "ruleNO:" << j << " Values: " << myString << endl;
         }
     }
     for (char element : terminals)
     {
         std::cout << element << " ";
     }
+    cout << endl;
 }
 
 bool isLetter(char ch)
@@ -138,5 +152,67 @@ void generateError(int errorType)
         exit(EXIT_FAILURE);
     default:
         break;
+    }
+}
+
+set<char> calculateFirst(char NoneTerminal)
+{
+    vector<int> noneTerminalRules = NoneTerminals[NoneTerminal];
+    vector<char> Rule;
+    for (int rule : noneTerminalRules)
+    {
+        Rule = Rules[rule];
+        int i = 0;
+        char item = Rule[i];
+        if (isTerminal(item))
+        {
+            First[NoneTerminal].insert(item);
+        }
+        else
+        {
+            set<char> firstOfItem = firstof(item, Rule, i);
+            First[NoneTerminal].insert(firstOfItem.begin(), firstOfItem.end());
+        }
+    }
+    return First[NoneTerminal];
+}
+
+set<char> firstof(char item, vector<char> Rule, int i)
+{
+    set<char> firstOfItem;
+    for (char first : calculateFirst(item))
+    {
+        if ('&' == first)
+        {
+            i++;
+            item = Rule[i];
+            if (isTerminal(item))
+            {
+                firstOfItem.insert(item);
+            }
+            else
+            {
+                set<char> firstOfItem2 = firstof(item, Rule, i);
+                firstOfItem.insert(firstOfItem2.begin(), firstOfItem2.end());
+            }
+        }
+        else
+        {
+            firstOfItem.insert(first);
+        }
+    }
+    return firstOfItem;
+}
+
+void printFirst()
+{
+    for (pair NoneTerminal : First)
+    {
+        cout << "FIRST(" << NoneTerminal.first << "): ";
+        for (char terminal : NoneTerminal.second)
+        {
+            cout << terminal << ", ";
+        }
+        cout << endl;
     }
 }

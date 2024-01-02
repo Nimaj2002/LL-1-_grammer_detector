@@ -1,0 +1,7 @@
+S -> AaAb | BbBa
+A -> &
+B -> &
+
+// first(S) = a, b
+// first(A) = &
+// first(B) = &

@@ -1,0 +1,6 @@
+S -> aSbS | bSaS | &
+
+    
+/ first(s) = a, b, &
+/ follow(s) = $, b, a,
+/ not LL1

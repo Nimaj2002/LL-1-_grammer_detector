@@ -1,5 +1,0 @@
-E->TBE
-B             -> +TB | &
-T -> FC
-C -> *FC | &
-F -> (E) | b
