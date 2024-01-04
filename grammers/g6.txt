@@ -1,9 +1,11 @@
-P -> { S }
-S -> T S
-S -> &
-T -> i = E ;
-T -> i ( E ) T
-E -> i M
-M -> + E 
-M -> - E 
-M -> &
+E  -> TS
+S -> +T S| &
+T  -> F G
+G -> *F G | &
+F  -> (E) | i
+
+/ FIRST(E) = FIRST(T) = ( , i 
+/ FIRST(F) = ( , i 
+/ FIRST(G) = *, & 
+/ FIRST(S) = +, & 
+/ FIRST(T) = FIRST(F) = ( , i 

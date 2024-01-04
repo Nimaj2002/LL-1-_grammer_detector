@@ -22,7 +22,7 @@ void printGrammer();
 bool isLetter(char ch);
 bool isTerminal(char ch);
 void generateError(int errorType);
-set<char> calculateFirst(char NoneTerminal);
+void calculateFirst(char NT);
 void printFirst();
 set<char> firstof(char item, vector<char> Rule, int i);
 
@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
 
     read_grammar(filePath);
     printGrammer();
-    for (pair Terminal : NoneTerminals)
+    for (pair NT : NoneTerminals)
     {
-        calculateFirst(Terminal.first);
+        calculateFirst(NT.first);
     }
     printFirst();
 }
@@ -74,6 +74,14 @@ void read_grammar(string filePath)
                     Rules[ruleNumber] = items;
                     First[noneTerminal] = emptySet;
                     Follow[noneTerminal] = emptySet;
+                    switch (ruleNumber)
+                    {
+                    case 1: // adding $ to the starting NoneTerminal
+                        Follow[noneTerminal].insert('$');
+                        break;
+                    default:
+                        break;
+                    }
                     ruleNumber++;
                     items.clear();
                 }
@@ -155,53 +163,65 @@ void generateError(int errorType)
     }
 }
 
-set<char> calculateFirst(char NoneTerminal)
+void calculateFirst(char NT)
 {
-    vector<int> noneTerminalRules = NoneTerminals[NoneTerminal];
-    vector<char> Rule;
-    for (int rule : noneTerminalRules)
+    set<char> firstNT;
+    for (int r : NoneTerminals[NT])
     {
-        Rule = Rules[rule];
-        int i = 0;
-        char item = Rule[i];
-        if (isTerminal(item))
+        vector<char> rule = Rules[r];
+        if (isTerminal(rule[0]))
         {
-            First[NoneTerminal].insert(item);
+            firstNT.insert(rule[0]);
+            continue;
         }
-        else
+        for (int i = 0; i < rule.size(); i++)
         {
-            set<char> firstOfItem = firstof(item, Rule, i);
-            First[NoneTerminal].insert(firstOfItem.begin(), firstOfItem.end());
-        }
-    }
-    return First[NoneTerminal];
-}
-
-set<char> firstof(char item, vector<char> Rule, int i)
-{
-    set<char> firstOfItem;
-    for (char first : calculateFirst(item))
-    {
-        if ('&' == first)
-        {
-            i++;
-            item = Rule[i];
-            if (isTerminal(item))
+            if (isTerminal(rule[i]))
             {
-                firstOfItem.insert(item);
+                firstNT.insert(rule[i]);
+                break;
+            }
+
+            calculateFirst(rule[i]);
+            auto it = find(First[rule[i]].begin(), First[rule[i]].end(), '&');
+            if (it != First[rule[i]].end())
+            {
+                set<char> add = First[rule[i]];
+                add.erase('&');
+                firstNT.insert(add.begin(), add.end());
+                continue;
             }
             else
             {
-                set<char> firstOfItem2 = firstof(item, Rule, i);
-                firstOfItem.insert(firstOfItem2.begin(), firstOfItem2.end());
+                firstNT.insert(First[rule[i]].begin(), First[rule[i]].end());
+                break;
             }
         }
-        else
+
+        int i = 0;
+        for (auto rl : rule)
         {
-            firstOfItem.insert(first);
+            if (isTerminal(rl))
+            {
+                break;
+            }
+            
+            auto it = find(First[rl].begin(), First[rl].end(), '&');
+            if (it != First[rl].end())
+            {
+                i++;
+            }
+            else
+            {
+                continue;
+            }
         }
+        if (rule.size() == i){
+            firstNT.insert('&');
+        }
+        
     }
-    return firstOfItem;
+    First[NT].insert(firstNT.begin(), firstNT.end());
 }
 
 void printFirst()

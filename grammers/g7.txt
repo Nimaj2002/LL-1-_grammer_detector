@@ -1,0 +1,11 @@
+S -> aAB | CB | B
+A -> DBC | &
+B -> cC | CD | bB | &
+C -> cAd | D | &
+D -> dD | d | &
+
+/ first(S) = a, c, d, b, &
+/ first(A) = d, c, b, &
+/ first(B) = c, d, &, b
+/ first(C) = c, d, &
+/ first(D) = d, & 
