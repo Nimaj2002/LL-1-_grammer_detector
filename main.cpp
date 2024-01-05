@@ -10,35 +10,35 @@
 
 using namespace std;
 
-map<char, vector<int>> NoneTerminals;
-map<int, char> RuleNT;
-map<int, vector<char>> Rules;
-set<char> terminals;
+map<char, vector<int>> NoneTerminals; // storing rules for each NoneTerminal
+map<int, char> RuleNT;                // storing rule number poinint to NoneTerminal
+map<int, vector<char>> Rules;         // storing state of each rule
+set<char> terminals;                  // set of terminals
 int ruleNumber = 1;
 
-map<char, set<char>> First;
-map<int, set<char>> ruleFirst;
-map<char, set<char>> Follow;
+map<char, set<char>> First;    // storing First of each NoneTerminal
+map<int, set<char>> ruleFirst; // storing First of each rule
+map<char, set<char>> Follow;   // storing Follow of each NoneTerminal
 
-map<char, map<char, int>> M;
+map<char, map<char, int>> M; // Parsing Tree
 
 stack<char> STACK;
 string W;
 
 void read_grammar(string filePath);
-void printGrammer();
 bool isLetter(char ch);
 bool isTerminal(char ch);
 void generateError(int errorType);
 void calculateFirst(char NT);
-void printFirst();
 void calculateFollow();
+void generateParsingTable();
+void validateInput();
+
+void printGrammer();
+void printFirst();
 void printFollow();
 void printFirstFollow();
-void printRuleFirst();
-void generateParsingTable();
 void printParsingTable();
-void validateInput();
 void printRule(int rule);
 
 int main(int argc, char *argv[])
@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
     filePath = argv[1];
 
     read_grammar(filePath);
-    // printGrammer();
     for (pair NT : NoneTerminals)
     {
         calculateFirst(NT.first);
@@ -144,28 +143,6 @@ void read_grammar(string filePath)
             }
         }
     }
-}
-
-void printGrammer()
-{
-    for (auto it : NoneTerminals)
-    {
-        cout << "Key: " << it.first << endl;
-        for (auto j : it.second)
-        {
-            std::string myString;
-            for (char c : Rules[j])
-            {
-                myString += c;
-            }
-            cout << "ruleNO:" << j << " Values: " << myString << endl;
-        }
-    }
-    for (char element : terminals)
-    {
-        std::cout << element << " ";
-    }
-    cout << endl;
 }
 
 bool isLetter(char ch)
@@ -273,32 +250,6 @@ void calculateFirst(char NT)
     First[NT].insert(firstNT.begin(), firstNT.end());
 }
 
-void printFirst()
-{
-    for (pair NoneTerminal : First)
-    {
-        cout << "FIRST(" << NoneTerminal.first << "): ";
-        for (char terminal : NoneTerminal.second)
-        {
-            cout << terminal << " ";
-        }
-        cout << endl;
-    }
-}
-
-void printRuleFirst()
-{
-    for (pair rule : ruleFirst)
-    {
-        cout << rule.first << ": ";
-        for (char ch : rule.second)
-        {
-            cout << ch << " ";
-        }
-        cout << endl;
-    }
-}
-
 void calculateFollow()
 {
     int n = ruleNumber;
@@ -324,56 +275,44 @@ void calculateFollow()
                     for (int k = 0; k < Rules[p].size(); k++)
                     { // go through rule number p
                         if (Rules[p][k] == (char)r)
-                        { // if we find nonterminal r  (ex. "B")
-                            if (k + 1 < Rules[p].size())
-                            { // if not the last character of production
-                                if (isTerminal(Rules[p][k + 1]))
-                                {                                            // if the character after is a terminal (ex. Bb)
-                                    Follow[(char)r].insert(Rules[p][k + 1]); // add b to follow(B)
-                                }
-                                else
-                                {
-                                    Follow[(char)r].insert(First[Rules[p][k + 1]].begin(), First[Rules[p][k + 1]].end()); // if the char after nonterminal is another nonterminal (ex BC)
-                                    auto pos = First[Rules[p][k + 1]].find('&');
+                        {
 
-                                    if (distance(First[Rules[p][k + 1]].begin(), pos) < First[Rules[p][k + 1]].size())
-                                    {                                                                           // if there's epsilon in first C
-                                        Follow[(char)r].insert(Follow[(char)i].begin(), Follow[(char)i].end()); // add Follow of "A" in "A-> BC" to Follow of B
-                                    }
-                                    else
-                                    {
-                                        cout << "rule 4";
-                                        Follow[(char)r].insert(First[(char)i].begin(), First[(char)i].end()); // if no epsilon in first C, add First(C) to Follow(B)
-                                    }
-                                }
-                            }
-                            else if (k + 1 == Rules[p].size())
+                            if (k + 1 == Rules[p].size())
                             {                                                                           // if r is the last character of the production. (ex. "B" in "A-> bcB")
                                 Follow[(char)r].insert(Follow[(char)i].begin(), Follow[(char)i].end()); // add Follow(A) to Follow(B)
                             }
+                            else
+                                // if we find nonterminal r  (ex. "B")
+                                while (++k < Rules[p].size())
+                                { // if not the last character of production
+                                    if (isTerminal(Rules[p][k]))
+                                    {                                        // if the character after is a terminal (ex. Bb)
+                                        Follow[(char)r].insert(Rules[p][k]); // add b to follow(B)
+                                        break;
+                                    }
+                                    else
+                                    {
+
+                                        Follow[(char)r].insert(First[Rules[p][k]].begin(), First[Rules[p][k]].end()); // if the char after nonterminal is another nonterminal (ex BC)
+                                        auto pos = First[Rules[p][k]].find('&');
+                                        if (distance(First[Rules[p][k]].begin(), pos) < First[Rules[p][k]].size() && k == Rules[p].size() - 1)
+                                        {                                                                           // if there's epsilon in first C
+                                            Follow[(char)r].insert(Follow[(char)i].begin(), Follow[(char)i].end()); // add Follow of "A" in "A-> BC" to Follow of B
+                                        }
+                                        else if (distance(First[Rules[p][k]].begin(), pos) == First[Rules[p][k]].size())
+                                        {                                                                         // no epsilon in first of nonterminal
+                                            Follow[(char)r].insert(First[(char)i].begin(), First[(char)i].end()); // if no epsilon in first C, add First(C) to Follow(B)
+                                            break;
+                                        }
+                                    }
+                                }
                         }
                         Follow[(char)r].erase('&');
+                        Follow[(char)r].insert('$');
                     }
                 }
             }
         }
-    }
-}
-
-void printFollow()
-{
-
-    int a = (int)'A';
-    for (; a <= (int)'Z'; a++)
-    {
-
-        if (NoneTerminals[(char)a].empty())
-            continue;
-        auto it = Follow[(char)a].begin();
-        cout << "Follow(" << (char)a << "): ";
-        for (; it != Follow[(char)a].end(); it++)
-            cout << *it << " ";
-        cout << endl;
     }
 }
 
@@ -432,6 +371,127 @@ void generateParsingTable()
     }
 }
 
+void validateInput()
+{
+    int i = 0;
+    char a = W[i];
+    char X = STACK.top();
+    while (!STACK.empty())
+    {
+        if (X == a)
+        {
+            STACK.pop();
+            i++;
+            a = W[i];
+        }
+        else if (isTerminal(X))
+        {
+            generateError(2);
+        }
+        else if (0 == M[X][a])
+        {
+            generateError(2);
+        }
+        else if (int rule = M[X][a])
+        {
+            printRule(rule);
+            STACK.pop();
+            vector<char> rules = Rules[rule];
+            for (auto it = rules.rbegin(); it != rules.rend(); ++it)
+            {
+                if ('&' == *it)
+                {
+                    continue;
+                }
+                STACK.push(*it);
+            }
+        }
+        if (STACK.empty())
+        {
+            break;
+        }
+
+        X = STACK.top();
+    }
+    cout << "ACCEPT" << endl;
+    return;
+}
+
+void printGrammer()
+{
+    for (auto it : NoneTerminals)
+    {
+        cout << "Key: " << it.first << endl;
+        for (auto j : it.second)
+        {
+            std::string myString;
+            for (char c : Rules[j])
+            {
+                myString += c;
+            }
+            cout << "ruleNO:" << j << " Values: " << myString << endl;
+        }
+    }
+    for (char element : terminals)
+    {
+        std::cout << element << " ";
+    }
+    cout << endl;
+}
+
+void printFirst()
+{
+    for (pair NoneTerminal : First)
+    {
+        cout << "FIRST(" << NoneTerminal.first << "): ";
+        for (char terminal : NoneTerminal.second)
+        {
+            cout << terminal << " ";
+        }
+        cout << endl;
+    }
+}
+
+void printFollow()
+{
+
+    int a = (int)'A';
+    for (; a <= (int)'Z'; a++)
+    {
+
+        if (NoneTerminals[(char)a].empty())
+            continue;
+        auto it = Follow[(char)a].begin();
+        cout << "Follow(" << (char)a << "): ";
+        for (; it != Follow[(char)a].end(); it++)
+            cout << *it << " ";
+        cout << endl;
+    }
+}
+
+void printFirstFollow()
+{
+    cout << "\t"
+         << "First"
+         << "\t\t"
+         << "Follow" << endl;
+    for (pair NT : First)
+    {
+        cout << NT.first << "\t";
+        for (char terminal : NT.second)
+        {
+            cout << terminal << " ";
+        }
+        cout << "\t|\t";
+
+        for (char terminal : Follow[NT.first])
+        {
+            cout << terminal << " ";
+        }
+        cout << endl;
+    }
+}
+
 void printParsingTable()
 {
     set<char> finalTerminals = terminals;
@@ -466,89 +526,6 @@ void printParsingTable()
         }
         cout << endl;
     }
-}
-
-void printFirstFollow()
-{
-    cout << "\t"
-         << "First"
-         << "\t\t"
-         << "Follow" << endl;
-    for (pair NT : First)
-    {
-        cout << NT.first << "\t";
-        for (char terminal : NT.second)
-        {
-            cout << terminal << " ";
-        }
-        cout << "\t|\t";
-
-        for (char terminal : Follow[NT.first])
-        {
-            cout << terminal << " ";
-        }
-        cout << endl;
-    }
-}
-
-void validateInput()
-{
-    int i = 0;
-    char a = W[i];
-    char X = STACK.top();
-    while (!STACK.empty())
-    {
-        // cout << ">>>>" << STACK.top() << endl;
-        // cout << ">>" << a << endl;
-        if (X == a)
-        {
-            STACK.pop();
-            i++;
-            a = W[i];
-        }
-        else if (isTerminal(X))
-        {
-            // cout << "one" << endl;
-            generateError(2);
-        }
-        else if (0 == M[X][a])
-        {
-            // cout << "two" << endl;
-            // cout << X << "---" << a << endl;
-            generateError(2);
-        }
-        else if (int rule = M[X][a])
-        {
-            // int rule = M[X][a];
-            printRule(rule);
-            STACK.pop();
-            // cout << ">>>>>" << rule << endl;
-            vector<char> rules = Rules[rule];
-            // for (char r : rules)
-            // {
-            //     cout << r;
-            // }
-            // cout << endl;
-            for (auto it = rules.rbegin(); it != rules.rend(); ++it)
-            {
-                // cout << '>' << *it << endl;
-                if ('&' == *it)
-                {
-                    continue;
-                }
-                STACK.push(*it);
-            }
-        }
-        if (STACK.empty())
-        {
-            break;
-        }
-
-        X = STACK.top();
-        // cout << ">>>" << X << endl;
-    }
-    cout << "ACCEPT" << endl;
-    return;
 }
 
 void printRule(int rule)
