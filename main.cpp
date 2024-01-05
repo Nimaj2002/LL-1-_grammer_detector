@@ -6,10 +6,12 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <stack>
 
 using namespace std;
 
 map<char, vector<int>> NoneTerminals;
+map<int, char> RuleNT;
 map<int, vector<char>> Rules;
 set<char> terminals;
 int ruleNumber = 1;
@@ -18,7 +20,10 @@ map<char, set<char>> First;
 map<int, set<char>> ruleFirst;
 map<char, set<char>> Follow;
 
-map<char, map<char, int>> parsingTable;
+map<char, map<char, int>> M;
+
+stack<char> STACK;
+string W;
 
 void read_grammar(string filePath);
 void printGrammer();
@@ -33,6 +38,8 @@ void printFirstFollow();
 void printRuleFirst();
 void generateParsingTable();
 void printParsingTable();
+void validateInput();
+void printRule(int rule);
 
 int main(int argc, char *argv[])
 {
@@ -45,17 +52,20 @@ int main(int argc, char *argv[])
     {
         calculateFirst(NT.first);
     }
-    // printFirst();
-    // printRuleFirst();
     calculateFollow();
-    // printFollow();
-    cout << endl
+    cout << '\n'
          << "First Follow Table:" << endl;
     printFirstFollow();
     generateParsingTable();
-    cout << endl
+    cout << '\n'
          << "Parsing Table:" << endl;
     printParsingTable();
+    
+    cout << endl
+         << "Enter the input:" << endl;
+    cin >> W;
+    W += "$";
+    validateInput();
 }
 
 void read_grammar(string filePath)
@@ -89,14 +99,18 @@ void read_grammar(string filePath)
                 if (find == NoneTerminals.end()) // no same NoneTerminal in map
                 {
                     NoneTerminals[noneTerminal] = {ruleNumber};
+                    RuleNT[ruleNumber] = noneTerminal;
                     Rules[ruleNumber] = items;
                     First[noneTerminal] = emptySet;
                     Follow[noneTerminal] = emptySet;
                     switch (ruleNumber)
                     {
                     case 1: // adding $ to the starting NoneTerminal
+                    {
+                        STACK.push(noneTerminal);
                         Follow[noneTerminal].insert('$');
                         break;
+                    }
                     default:
                         break;
                     }
@@ -106,6 +120,7 @@ void read_grammar(string filePath)
                 else // there is a rule starting with same NoneTerminal
                 {
                     find->second.push_back(ruleNumber);
+                    RuleNT[ruleNumber] = noneTerminal;
                     Rules[ruleNumber] = items;
                     ruleNumber++;
                     items.clear();
@@ -175,6 +190,9 @@ void generateError(int errorType)
         break;
     case 1:
         cout << "ERROR" << endl;
+        exit(EXIT_FAILURE);
+    case 2:
+        cout << "Error" << endl;
         exit(EXIT_FAILURE);
     default:
         break;
@@ -364,26 +382,25 @@ void generateParsingTable()
                 set<char> ts = Follow[NT.first];
                 for (char t : ts)
                 {
-                    if (0 != parsingTable[NT.first][t])
+                    if (0 != M[NT.first][t])
                     {
                         cout << "Grammar is not LL (1)" << endl;
                         exit(EXIT_FAILURE);
                     }
-                    parsingTable[NT.first][t] = ruleN;
+                    M[NT.first][t] = ruleN;
                 }
             }
-            else
-            {
-                for (char f : rf)
-                {
-                    if (0 != parsingTable[NT.first][f])
-                    {
-                        cout << "Grammar is not LL (1)" << endl;
-                        exit(EXIT_FAILURE);
-                    }
 
-                    parsingTable[NT.first][f] = ruleN;
+            rf.erase('&');
+            for (char f : rf)
+            {
+                if (0 != M[NT.first][f])
+                {
+                    cout << "Grammar is not LL (1)" << endl;
+                    exit(EXIT_FAILURE);
                 }
+
+                M[NT.first][f] = ruleN;
             }
         }
     }
@@ -398,11 +415,11 @@ void generateParsingTable()
         set<char> follow = Follow[NT.first];
         for (char t : follow)
         {
-            if (0 != parsingTable[NT.first][t])
+            if (0 != M[NT.first][t])
             {
                 continue;
             }
-            parsingTable[NT.first][t] = 'S';
+            M[NT.first][t] = 'S';
         }
     }
 }
@@ -430,13 +447,13 @@ void printParsingTable()
         cout << NT.first << "\t";
         for (char terminal : terminals)
         {
-            if ('S' == parsingTable[NT.first][terminal])
+            if ('S' == M[NT.first][terminal])
             {
                 cout << 'S' << " ";
             }
             else
             {
-                cout << parsingTable[NT.first][terminal] << " ";
+                cout << M[NT.first][terminal] << " ";
             }
         }
         cout << endl;
@@ -464,4 +481,74 @@ void printFirstFollow()
         }
         cout << endl;
     }
+}
+
+void validateInput()
+{
+    int i = 0;
+    char a = W[i];
+    char X = STACK.top();
+    while (!STACK.empty())
+    {
+        // cout << ">>>>" << STACK.top() << endl;
+        // cout << ">>" << a << endl;
+        if (X == a)
+        {
+            STACK.pop();
+            i++;
+            a = W[i];
+        }
+        else if (isTerminal(X))
+        {
+            // cout << "one" << endl;
+            generateError(2);
+        }
+        else if (0 == M[X][a])
+        {
+            // cout << "two" << endl;
+            // cout << X << "---" << a << endl;
+            generateError(2);
+        }
+        else if (int rule = M[X][a])
+        {
+            // int rule = M[X][a];
+            printRule(rule);
+            STACK.pop();
+            // cout << ">>>>>" << rule << endl;
+            vector<char> rules = Rules[rule];
+            // for (char r : rules)
+            // {
+            //     cout << r;
+            // }
+            // cout << endl;
+            for (auto it = rules.rbegin(); it != rules.rend(); ++it)
+            {
+                // cout << '>' << *it << endl;
+                if ('&' == *it)
+                {
+                    continue;
+                }
+                STACK.push(*it);
+            }
+        }
+        if (STACK.empty())
+        {
+            break;
+        }
+
+        X = STACK.top();
+        // cout << ">>>" << X << endl;
+    }
+    cout << "ACCEPT" << endl;
+    return;
+}
+
+void printRule(int rule)
+{
+    cout << RuleNT[rule] << "\t->\t";
+    for (char c : Rules[rule])
+    {
+        cout << c;
+    }
+    cout << endl;
 }

@@ -1,17 +1,17 @@
-E  -> TR
-R  -> +T R| &
-T  -> F Y
-Y  -> *F Y | &
-F  -> (E) | i
+A  -> BC
+C  -> +B C| &
+B  -> F E
+E  -> *F E | &
+F  -> (A) | i
 
-/ First(E)= (, i, 
+/ First(A)= (, i, 
 / First(F)= (, i, 
-/ First(R)= +, &, 
-/ First(T)= (, i, 
+/ First(C)= +, &, 
+/ First(B)= (, i, 
 / First(Y)= *, &, 
 
-/ Follow(E) = $, ),
+/ Follow(A) = $, ),
 / Follow(F) = *, +, $, ),
-/ Follow(R) = $, ),
-/ Follow(T) = +, $, ),
+/ Follow(C) = $, ),
+/ Follow(B) = +, $, ),
 / Follow(Y) = +, $, ),
