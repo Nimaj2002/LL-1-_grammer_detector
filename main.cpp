@@ -63,7 +63,11 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-        cout << ",,,,," << STACK.empty() << endl;
+        while (!STACK.empty())
+        {
+            STACK.pop();
+        }
+        STACK.push(RuleNT[1]);
         cout << endl
              << "Enter the input:" << endl;
         W.clear();
@@ -112,7 +116,6 @@ void read_grammar(string filePath)
                     {
                     case 1: // adding $ to the starting NoneTerminal
                     {
-                        STACK.push(noneTerminal);
                         Follow[noneTerminal].insert('$');
                         break;
                     }
