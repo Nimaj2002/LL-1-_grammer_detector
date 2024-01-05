@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <stack>
+#include <iomanip>
 
 using namespace std;
 
@@ -469,23 +470,18 @@ void printFollow()
     }
 }
 
-void printFirstFollow()
-{
-    cout << "\t"
-         << "First"
-         << "\t\t"
-         << "Follow" << endl;
-    for (pair NT : First)
-    {
-        cout << NT.first << "\t";
-        for (char terminal : NT.second)
-        {
+void printFirstFollow() {
+    cout << setw(20) << "First" << setw(20) << "Follow" << endl;
+
+    for (auto NT : First) {
+        cout << NT.first << setw(10);
+
+        for (char terminal : NT.second) {
             cout << terminal << " ";
         }
-        cout << "\t|\t";
+        cout << setw(20 - NT.second.size() * 2);
 
-        for (char terminal : Follow[NT.first])
-        {
+        for (char terminal : Follow[NT.first]) {
             cout << terminal << " ";
         }
         cout << endl;
