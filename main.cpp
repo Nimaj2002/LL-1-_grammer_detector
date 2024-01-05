@@ -15,6 +15,7 @@ set<char> terminals;
 int ruleNumber = 1;
 
 map<char, set<char>> First;
+map<int, set<char>> ruleFirst;
 map<char, set<char>> Follow;
 
 void read_grammar(string filePath);
@@ -40,8 +41,8 @@ int main(int argc, char *argv[])
     }
     printFirst();
 
-    calculateFollow();
-    printFollow();
+    // calculateFollow();
+    // printFollow();
 }
 
 void read_grammar(string filePath)
@@ -176,6 +177,7 @@ void calculateFirst(char NT)
         if (isTerminal(rule[0]))
         {
             firstNT.insert(rule[0]);
+            ruleFirst[r].insert(rule[0]);
             continue;
         }
         for (int i = 0; i < rule.size(); i++)
@@ -183,6 +185,7 @@ void calculateFirst(char NT)
             if (isTerminal(rule[i]))
             {
                 firstNT.insert(rule[i]);
+                ruleFirst[r].insert(rule[i]);
                 break;
             }
 
@@ -193,11 +196,13 @@ void calculateFirst(char NT)
                 set<char> add = First[rule[i]];
                 add.erase('&');
                 firstNT.insert(add.begin(), add.end());
+                ruleFirst[r].insert(add.begin(), add.end());
                 continue;
             }
             else
             {
                 firstNT.insert(First[rule[i]].begin(), First[rule[i]].end());
+                ruleFirst[r].insert(First[rule[i]].begin(), First[rule[i]].end());
                 break;
             }
         }
@@ -223,6 +228,7 @@ void calculateFirst(char NT)
         if (rule.size() == i)
         {
             firstNT.insert('&');
+            ruleFirst[r].insert('&');
         }
     }
     First[NT].insert(firstNT.begin(), firstNT.end());
@@ -235,7 +241,20 @@ void printFirst()
         cout << "FIRST(" << NoneTerminal.first << "): ";
         for (char terminal : NoneTerminal.second)
         {
-            cout << terminal << ", ";
+            cout << terminal << " ";
+        }
+        cout << endl;
+    }
+}
+
+void printRuleFirst()
+{
+    for (pair rule : ruleFirst)
+    {
+        cout << rule.first << ": ";
+        for (char ch : rule.second)
+        {
+            cout << ch << " ";
         }
         cout << endl;
     }

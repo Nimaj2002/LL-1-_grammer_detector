@@ -4,14 +4,14 @@ T  -> F Y
 Y  -> *F Y | &
 F  -> (E) | i
 
-/ First(E)= { (, i, }
-/ First(R)= { +, #, }
-/ First(T)= { (, i, }
-/ First(Y)= { *, #, }
-/ First(F)= { (, i, }
+/ First(E)= (, i, 
+/ First(F)= (, i, 
+/ First(R)= +, &, 
+/ First(T)= (, i, 
+/ First(Y)= *, &, 
 
-/ Follow(E) = { $, ),  }
-/ Follow(R) = { $, ),  }
-/ Follow(T) = { +, $, ),  }
-/ Follow(Y) = { +, $, ),  }
-/ Follow(F) = { *, +, $, ),  }
+/ Follow(E) = $, ),
+/ Follow(F) = *, +, $, ),
+/ Follow(R) = $, ),
+/ Follow(T) = +, $, ),
+/ Follow(Y) = +, $, ),
