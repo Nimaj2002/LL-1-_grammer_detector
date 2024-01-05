@@ -1,5 +1,17 @@
-E -> TK
-K -> +TK | &
-T -> FL
-L -> *FL | &
-F -> (E) | i
+E  -> TR
+R  -> +T R| &
+T  -> F Y
+Y  -> *F Y | &
+F  -> (E) | i
+
+/ First(E)= { (, i, }
+/ First(R)= { +, #, }
+/ First(T)= { (, i, }
+/ First(Y)= { *, #, }
+/ First(F)= { (, i, }
+
+/ Follow(E) = { $, ),  }
+/ Follow(R) = { $, ),  }
+/ Follow(T) = { +, $, ),  }
+/ Follow(Y) = { +, $, ),  }
+/ Follow(F) = { *, +, $, ),  }

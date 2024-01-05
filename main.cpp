@@ -24,7 +24,8 @@ bool isTerminal(char ch);
 void generateError(int errorType);
 void calculateFirst(char NT);
 void printFirst();
-set<char> firstof(char item, vector<char> Rule, int i);
+void calculateFollow();
+void printFollow();
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +39,9 @@ int main(int argc, char *argv[])
         calculateFirst(NT.first);
     }
     printFirst();
+
+    calculateFollow();
+    printFollow();
 }
 
 void read_grammar(string filePath)
@@ -205,7 +209,7 @@ void calculateFirst(char NT)
             {
                 break;
             }
-            
+
             auto it = find(First[rl].begin(), First[rl].end(), '&');
             if (it != First[rl].end())
             {
@@ -216,10 +220,10 @@ void calculateFirst(char NT)
                 continue;
             }
         }
-        if (rule.size() == i){
+        if (rule.size() == i)
+        {
             firstNT.insert('&');
         }
-        
     }
     First[NT].insert(firstNT.begin(), firstNT.end());
 }
@@ -233,6 +237,84 @@ void printFirst()
         {
             cout << terminal << ", ";
         }
+        cout << endl;
+    }
+}
+
+void calculateFollow()
+{
+    int n = ruleNumber;
+    int t = n;
+    while (--t)
+    {
+
+        int r = (int)'A';
+
+        for (; r <= (int)'Z'; r++)
+        {
+
+            int i = (int)'A';
+            for (; i <= (int)'Z'; i++)
+            {
+                if (NoneTerminals[(char)i].empty())
+                    continue;
+
+                int q = NoneTerminals[(char)i].size(); // vector of ints , rule numbers
+                for (int j = 0; j < q; j++)
+                {                                      // iterate through rule numbers in vector
+                    int p = NoneTerminals[(char)i][j]; // number of rule to analyze
+                    for (int k = 0; k < Rules[p].size(); k++)
+                    { // go through rule number p
+                        if (Rules[p][k] == (char)r)
+                        { // if we find nonterminal r  (ex. "B")
+                            if (k + 1 < Rules[p].size())
+                            { // if not the last character of production
+                                if (isTerminal(Rules[p][k + 1]))
+                                {                                            // if the character after is a terminal (ex. Bb)
+                                    Follow[(char)r].insert(Rules[p][k + 1]); // add b to follow(B)
+                                }
+                                else
+                                {
+                                    Follow[(char)r].insert(First[Rules[p][k + 1]].begin(), First[Rules[p][k + 1]].end()); // if the char after nonterminal is another nonterminal (ex BC)
+                                    auto pos = First[Rules[p][k + 1]].find('&');
+
+                                    if (distance(First[Rules[p][k + 1]].begin(), pos) < First[Rules[p][k + 1]].size())
+                                    {                                                                           // if there's epsilon in first C
+                                        Follow[(char)r].insert(Follow[(char)i].begin(), Follow[(char)i].end()); // add Follow of "A" in "A-> BC" to Follow of B
+                                    }
+                                    else
+                                    {
+                                        cout << "rule 4";
+                                        Follow[(char)r].insert(First[(char)i].begin(), First[(char)i].end()); // if no epsilon in first C, add First(C) to Follow(B)
+                                    }
+                                }
+                            }
+                            else if (k + 1 == Rules[p].size())
+                            {                                                                           // if r is the last character of the production. (ex. "B" in "A-> bcB")
+                                Follow[(char)r].insert(Follow[(char)i].begin(), Follow[(char)i].end()); // add Follow(A) to Follow(B)
+                            }
+                        }
+                        Follow[(char)r].erase('&');
+                    }
+                }
+            }
+        }
+    }
+}
+
+void printFollow()
+{
+
+    int a = (int)'A';
+    for (; a <= (int)'Z'; a++)
+    {
+
+        if (NoneTerminals[(char)a].empty())
+            continue;
+        auto it = Follow[(char)a].begin();
+        cout << "Follow(" << (char)a << "): ";
+        for (; it != Follow[(char)a].end(); it++)
+            cout << *it << " ";
         cout << endl;
     }
 }
