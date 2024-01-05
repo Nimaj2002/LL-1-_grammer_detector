@@ -60,12 +60,17 @@ int main(int argc, char *argv[])
     cout << '\n'
          << "Parsing Table:" << endl;
     printParsingTable();
-    
-    cout << endl
-         << "Enter the input:" << endl;
-    cin >> W;
-    W += "$";
-    validateInput();
+
+    while (true)
+    {
+        cout << ",,,,," << STACK.empty() << endl;
+        cout << endl
+             << "Enter the input:" << endl;
+        W.clear();
+        cin >> W;
+        W += "$";
+        validateInput();
+    }
 }
 
 void read_grammar(string filePath)
