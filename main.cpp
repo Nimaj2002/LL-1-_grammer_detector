@@ -18,6 +18,8 @@ map<char, set<char>> First;
 map<int, set<char>> ruleFirst;
 map<char, set<char>> Follow;
 
+map<char, map<char, int>> parsingTable;
+
 void read_grammar(string filePath);
 void printGrammer();
 bool isLetter(char ch);
@@ -27,6 +29,10 @@ void calculateFirst(char NT);
 void printFirst();
 void calculateFollow();
 void printFollow();
+void printFirstFollow();
+void printRuleFirst();
+void generateParsingTable();
+void printParsingTable();
 
 int main(int argc, char *argv[])
 {
@@ -34,15 +40,22 @@ int main(int argc, char *argv[])
     filePath = argv[1];
 
     read_grammar(filePath);
-    printGrammer();
+    // printGrammer();
     for (pair NT : NoneTerminals)
     {
         calculateFirst(NT.first);
     }
-    printFirst();
-
-    // calculateFollow();
+    // printFirst();
+    // printRuleFirst();
+    calculateFollow();
     // printFollow();
+    cout << endl
+         << "First Follow Table:" << endl;
+    printFirstFollow();
+    generateParsingTable();
+    cout << endl
+         << "Parsing Table:" << endl;
+    printParsingTable();
 }
 
 void read_grammar(string filePath)
@@ -334,6 +347,121 @@ void printFollow()
         cout << "Follow(" << (char)a << "): ";
         for (; it != Follow[(char)a].end(); it++)
             cout << *it << " ";
+        cout << endl;
+    }
+}
+
+void generateParsingTable()
+{
+    for (pair NT : NoneTerminals)
+    {
+        for (int ruleN : NT.second)
+        {
+            set<char> rf = ruleFirst[ruleN];
+            auto it = find(rf.begin(), rf.end(), '&');
+            if (it != rf.end()) // rule has &
+            {
+                set<char> ts = Follow[NT.first];
+                for (char t : ts)
+                {
+                    if (0 != parsingTable[NT.first][t])
+                    {
+                        cout << "Grammar is not LL (1)" << endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    parsingTable[NT.first][t] = ruleN;
+                }
+            }
+            else
+            {
+                for (char f : rf)
+                {
+                    if (0 != parsingTable[NT.first][f])
+                    {
+                        cout << "Grammar is not LL (1)" << endl;
+                        exit(EXIT_FAILURE);
+                    }
+
+                    parsingTable[NT.first][f] = ruleN;
+                }
+            }
+        }
+    }
+
+    for (pair NT : NoneTerminals)
+    {
+        if (NT.second.empty())
+        {
+            continue;
+        }
+
+        set<char> follow = Follow[NT.first];
+        for (char t : follow)
+        {
+            if (0 != parsingTable[NT.first][t])
+            {
+                continue;
+            }
+            parsingTable[NT.first][t] = 'S';
+        }
+    }
+}
+
+void printParsingTable()
+{
+    set<char> finalTerminals = terminals;
+    terminals.erase('&');
+    terminals.insert('$');
+
+    cout << "\t";
+    for (char terminal : terminals)
+    {
+        cout << terminal << " ";
+    }
+    cout << endl;
+
+    for (pair NT : NoneTerminals)
+    {
+        if (NT.second.empty())
+        {
+            continue;
+        }
+
+        cout << NT.first << "\t";
+        for (char terminal : terminals)
+        {
+            if ('S' == parsingTable[NT.first][terminal])
+            {
+                cout << 'S' << " ";
+            }
+            else
+            {
+                cout << parsingTable[NT.first][terminal] << " ";
+            }
+        }
+        cout << endl;
+    }
+}
+
+void printFirstFollow()
+{
+    cout << "\t"
+         << "First"
+         << "\t\t"
+         << "Follow" << endl;
+    for (pair NT : First)
+    {
+        cout << NT.first << "\t";
+        for (char terminal : NT.second)
+        {
+            cout << terminal << " ";
+        }
+        cout << "\t|\t";
+
+        for (char terminal : Follow[NT.first])
+        {
+            cout << terminal << " ";
+        }
         cout << endl;
     }
 }
