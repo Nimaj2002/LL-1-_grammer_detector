@@ -273,6 +273,9 @@ void calculateFollow()
                 for (int j = 0; j < q; j++)
                 {                                      // iterate through rule numbers in vector
                     int p = NoneTerminals[(char)i][j]; // number of rule to analyze
+                    if(p == 1)
+                        Follow[(char)i].insert('$');
+
                     for (int k = 0; k < Rules[p].size(); k++)
                     { // go through rule number p
                         if (Rules[p][k] == (char)r)
@@ -309,7 +312,6 @@ void calculateFollow()
                                 }
                         }
                         Follow[(char)r].erase('&');
-                        Follow[(char)r].insert('$');
                     }
                 }
             }
